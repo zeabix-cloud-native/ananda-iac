@@ -10,6 +10,7 @@ variable "azure_region" {
 variable "publisher_name" {
   description = "Name of publisher"
   type = string
+  default = "Zeabix Co.,Ltd"
 }
 variable "publisher_email" {
   description = "Emain of publisher"
@@ -59,13 +60,9 @@ variable "vm_size" {
 variable "user" {
   description = "User for Login SQL"
   type = string
+  default = "mariadbadmin"
 }
 variable "password" {
   description = "Root Password fo SQL"
   type = string
-}
-variable "minimum_tls_version" {
-  description = "Mininum TLS Require for mssql"
-  type = string
-  default = "1.2"
 }

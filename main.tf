@@ -17,7 +17,13 @@ resource "azurerm_api_management" "apim" {
   sku_name = var.apim_tier
 }
 ### END APIM ###
-
+### Cert mTLS ###
+resource "azurerm_api_management_certificate" "tls" {
+  name                = "${var.anotation_name}-cert"
+  api_management_name = azurerm_api_management.apim.name
+  resource_group_name = azurerm_resource_group.group.name
+  data                = filebase64("./Certificates_ananda.cer")
+}
 ### ACR ####
 resource "azurerm_container_registry" "acr" {
   name                = "${var.anotation_name}acr"
@@ -60,24 +66,23 @@ output "kube_config" {
   sensitive = true
 }
 ### Storage ####
-resource "azurerm_storage_account" "db" {
-  name                     = "${var.anotation_name}"
-  resource_group_name      = azurerm_resource_group.group.name
-  location                 = azurerm_resource_group.group.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-}
+resource "azurerm_mysql_server" "db" {
+  name                = "${var.anotation_name}-mysqlserver"
+  location            = azurerm_resource_group.group.location
+  resource_group_name = azurerm_resource_group.group.name
 
-resource "azurerm_mssql_server" "db_server" {
-  name                         = "${var.anotation_name}-db-server"
-  resource_group_name          = azurerm_resource_group.group.name
-  location                     = azurerm_resource_group.group.location
-  version                      = "12.0"
   administrator_login          = var.user
   administrator_login_password = var.password
-  minimum_tls_version          = var.minimum_tls_version
 
-  tags = {
-    environment = "development"
-  }
+  sku_name   = "B_Gen5_2"
+  storage_mb = 5120
+  version    = "5.7"
+
+  auto_grow_enabled                 = true
+  backup_retention_days             = 7
+  geo_redundant_backup_enabled      = false
+  infrastructure_encryption_enabled = false
+  public_network_access_enabled     = true
+  ssl_enforcement_enabled           = true
+  ssl_minimal_tls_version_enforced  = "TLS1_2"
 }
