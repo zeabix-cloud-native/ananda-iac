@@ -3,6 +3,7 @@
 
 ## Requirements
 - [Terraform](https://www.terraform.io/downloads.html)
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 
 
 ## Usage
