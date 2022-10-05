@@ -1,5 +1,5 @@
 # Ananda IAC
-![Terraform](https://github.com/zeabix-cloud-native/ananda-iac/actions/workflows/terraform.yaml/badge.svg)
+![Terraform](https://github.com/zeabix-cloud-native/ananda-iac/actions/workflows/terraform.yml/badge.svg)
 
 ## Requirements
 - [Terraform](https://www.terraform.io/downloads.html)
