@@ -65,6 +65,135 @@ output "kube_config" {
 
   sensitive = true
 }
+resource "random_string" "unique" {
+  length  = 6
+  special = false
+  upper   = false
+}
+provider "helm" {
+  kubernetes {
+    host                   = azurerm_kubernetes_cluster.cluster.kube_config.0.host
+    username               = azurerm_kubernetes_cluster.cluster.kube_config.0.username
+    password               = azurerm_kubernetes_cluster.cluster.kube_config.0.password
+    client_certificate      = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.client_certificate)
+    client_key             = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.client_key)
+    cluster_ca_certificate  = base64decode(azurerm_kubernetes_cluster.cluster.kube_config.0.cluster_ca_certificate)
+  }
+}
+resource "azurerm_public_ip" "ingress" {
+  name                = "pip-${var.anotation_name}-ingress"
+  location            = azurerm_resource_group.group.location
+  resource_group_name = azurerm_kubernetes_cluster.cluster.node_resource_group
+  domain_name_label   = "${var.anotation_name}-${random_string.unique.result}"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+}
+
+### HELM RELEASE ####
+
+provider "kubernetes" {
+  config_path            = local_sensitive_file.kube_config.filename
+}
+resource "helm_release" "cert_manager" {
+  name             = "cert-manager"
+  repository       = "https://charts.jetstack.io"
+  chart            = "cert-manager"
+  namespace        = var.cert_manager_ns
+  create_namespace = true
+  version          = "v1.9.1"
+
+  set {
+    name  = "installCRDs"
+    value = true
+  }
+}
+resource "helm_release" "ingress" {
+  name             = "nginx-ingress"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  namespace        = var.ingress_ns
+  create_namespace = true
+  wait = false
+  set {
+    name  = "controller.replicaCount"
+    value = var.ingress_replica_count
+  }
+
+  set {
+    name  = "controller.service.loadBalancerIP"
+    value = azurerm_public_ip.ingress.ip_address
+  }
+
+  set {
+    name  = "controller.nodeSelector\\.kubernetes\\.io/os"
+    value = "linux"
+    type  = "string"
+  }
+  set {
+    name = "controller.admissionWebhooks.patch.nodeSelector\\.kubernetes\\.io/os"
+    value = "linux"
+    type =  "string"
+  }
+  set {
+    name  = "defaultBackend.nodeSelector\\.kubernetes\\.io/os"
+    value = "linux"
+    type  = "string"
+  }
+
+  set {
+    name  = "controller.extraArgs.default-ssl-certificate"
+    value = "${helm_release.cert_manager.namespace}/${var.default_cert_secret_name}"
+  }
+  
+}
+
+resource "helm_release" "argocd" {
+# https://bitnami.com/stack/argo-cd/helm
+  count = 1
+  name  = "argocd"
+
+  repository = "https://charts.bitnami.com/bitnami"
+  chart      = "argo-cd"
+  namespace  = "argocd"
+  create_namespace = true
+
+}
+resource "local_sensitive_file" "kube_config" {
+  filename          = "${path.module}/kubeconfig"
+  content           = azurerm_kubernetes_cluster.cluster.kube_config_raw
+}
+
+locals {
+  cert_manager_yaml = "${path.module}/cert-manager.yml"
+}
+
+resource "null_resource" "cert_manager" {
+  triggers = {
+    kube_config               = sha1(azurerm_kubernetes_cluster.cluster.kube_config_raw)
+    cert_manager_ns          = helm_release.cert_manager.namespace
+    default_cert_secret_name = var.default_cert_secret_name
+    fqdn                     = azurerm_public_ip.ingress.fqdn
+    cert_manager_sha1        = filesha1(local.cert_manager_yaml)
+  }
+
+  provisioner "local-exec" {
+    environment = {
+      KUBECONFIG               = local_sensitive_file.kube_config.filename
+      DEFAULT_CERT_SECRET_NAME = var.default_cert_secret_name
+      FQDN                     = azurerm_public_ip.ingress.fqdn
+      EMAIL_ISSUE              = var.publisher_email
+    }
+    command = <<EOF
+      envsubst < ${local.cert_manager_yaml} | kubectl apply -n ${helm_release.cert_manager.namespace} -f -
+      EOF
+  }
+
+  depends_on = [
+    helm_release.ingress,
+    helm_release.cert_manager
+  ]
+}
+
 ### Storage ####
 resource "azurerm_mysql_server" "db" {
   name                = "${var.anotation_name}-mysqlserver"

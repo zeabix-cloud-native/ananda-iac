@@ -15,6 +15,7 @@ variable "publisher_name" {
 variable "publisher_email" {
   description = "Emain of publisher"
   type = string
+  default = "amonchai.p@zeabix.com"
 }
 
 variable "apim_tier" {
@@ -55,6 +56,18 @@ variable "vm_size" {
     description = "Type machine provide"
     type = string
     default = "Standard_D2_v2"
+}
+variable ingress_ns {
+  default = "ingress"
+}
+variable ingress_replica_count {
+  default = 2
+}
+variable default_cert_secret_name {
+  default = "tls-secret"
+}
+variable cert_manager_ns {
+  default = "cert-manager"
 }
 ## DB ### 
 variable "user" {
