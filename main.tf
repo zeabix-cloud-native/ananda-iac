@@ -32,7 +32,7 @@ resource "azurerm_api_management_logger" "logger" {
   }
 }
 resource "azurerm_api_management_diagnostic" "diagnostic" {
-  identifier               = "${var.anotation_name}-applicationinsights"
+  identifier               = "applicationinsights"
   resource_group_name      = azurerm_resource_group.group.name
   api_management_name      = azurerm_api_management.apim.name
   api_management_logger_id = azurerm_api_management_logger.logger.id
