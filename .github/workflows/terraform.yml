@@ -10,6 +10,9 @@ on:
 
 jobs:
   terraform:
+    defaults:
+      run: 
+        working-directory: ./terraform
     runs-on: ubuntu-latest
 
     steps:
