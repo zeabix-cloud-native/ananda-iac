@@ -193,7 +193,11 @@ resource "helm_release" "ingress" {
     name  = "controller.service.loadBalancerIP"
     value = azurerm_public_ip.ingress.ip_address
   }
-
+  
+  set {
+    name  = "controller.service.externalTrafficPolicy"
+    value = "Local"
+  }
   set {
     name  = "controller.nodeSelector\\.kubernetes\\.io/os"
     value = "linux"
