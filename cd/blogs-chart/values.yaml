@@ -48,7 +48,7 @@ ingress:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/auth-tls-verify-client: "on"
     nginx.ingress.kubernetes.io/auth-tls-secret: "app/ingress-secret-self"
-    nginx.ingress.kubernetes.io/whitelist-source-range" : "58.8.180.206/32"
+    nginx.ingress.kubernetes.io/whitelist-source-range : "58.8.180.206/32"
   hosts:
     - host: blog.z-unified.com
       paths:
