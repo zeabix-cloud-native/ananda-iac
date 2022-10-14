@@ -80,12 +80,43 @@ resource "azurerm_api_management_diagnostic" "diagnostic" {
   }
 }
 ### END APIM ###
+data "azurerm_client_config" "current" {}
 ### Cert mTLS ###
 resource "azurerm_api_management_certificate" "tls" {
   name                = "${var.anotation_name}-cert"
   api_management_name = azurerm_api_management.apim.name
   resource_group_name = azurerm_resource_group.group.name
   data                = filebase64("./Certificates_ananda.cer")
+}
+
+### Key Vault ###
+resource "azurerm_key_vault" "vault" {
+  name                        = "${var.anotation_name}-demo-01-keyvault"
+  location                    = azurerm_resource_group.group.location
+  resource_group_name         = azurerm_resource_group.group.name
+  enabled_for_disk_encryption = true
+  tenant_id                   = data.azurerm_client_config.current.tenant_id
+  soft_delete_retention_days  = 7
+  purge_protection_enabled    = false
+
+  sku_name = "standard"
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Get",
+    ]
+
+    secret_permissions = [
+      "Get",
+    ]
+
+    storage_permissions = [
+      "Get",
+    ]
+  }
 }
 ### ACR ####
 resource "azurerm_container_registry" "acr" {
@@ -288,4 +319,12 @@ resource "azurerm_mysql_server" "db" {
   public_network_access_enabled     = true
   ssl_enforcement_enabled           = true
   ssl_minimal_tls_version_enforced  = "TLS1_2"
+}
+
+resource "azurerm_mysql_database" "dbname" {
+  name                = "${var.anotation_name}-mockservdb-db"
+  resource_group_name = azurerm_resource_group.group.name
+  server_name         = azurerm_mysql_server.db.name
+  charset             = "utf8"
+  collation           = "utf8_unicode_ci"
 }
