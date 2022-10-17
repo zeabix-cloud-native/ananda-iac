@@ -31,6 +31,43 @@ resource "azurerm_api_management_logger" "logger" {
     instrumentation_key = azurerm_application_insights.insights.instrumentation_key
   }
 }
+resource "azurerm_log_analytics_workspace" "workspace" {
+  name                = "${var.anotation_name}-demo-workspace"
+  location            = azurerm_resource_group.group.location
+  resource_group_name = azurerm_resource_group.group.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+}
+resource "azurerm_monitor_diagnostic_setting" "diagnostic_setting" {
+  name                       = "${var.anotation_name}-diagnostic-settings"
+  target_resource_id         = azurerm_api_management.apim.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.workspace.id
+  log {
+    category = "GatewayLogs"
+    enabled  = false
+
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  log {
+    category = "WebSocketConnectionLogs"
+    enabled = false
+    retention_policy {
+      enabled = false
+    }
+  }
+
+  metric {
+    category = "AllMetrics"
+
+    retention_policy {
+      enabled = false
+    }
+  }
+}
+
 resource "azurerm_api_management_diagnostic" "diagnostic" {
   identifier               = "applicationinsights"
   resource_group_name      = azurerm_resource_group.group.name
