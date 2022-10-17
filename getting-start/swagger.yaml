@@ -1,0 +1,94 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Ananda APIM Demo API
+  description: |
+    Ananda demo API for proof of concept purpose only
+
+servers:
+  - url: https://ananda-demo-api.z-unified.com
+
+paths:
+  /api/profiles:
+    post:
+      description: |
+        Create sample profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProfileRequest'
+      responses:
+        '201':
+          description: Create profile successfully
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ProfileResponse'
+        '500':
+          description: Internal Server Error
+  
+  /api/profiles/{id}:
+    get:
+      description: |
+        Get user profile by given ID 
+      parameters:
+        - in: path
+          name: id 
+          description: User Profile ID 
+          required: true
+          schema: 
+            type: number
+          example: 1
+      responses:
+        '200': 
+          description: successfully
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/ProfileResponse'
+        '404':
+          description: Profile not found
+        '500':
+          description: Internal Server Error
+
+components:
+  schemas:
+    CreateProfileRequest:
+      type: object
+      required:
+        - firstname
+        - lastname
+        - email
+      properties:
+        firstname:
+          type: string
+          example: John
+        lastname: 
+          type: string
+          example: Lemon
+        email:
+          type: string
+          example: jonh.lemon@gmail.com
+
+    ProfileResponse:
+      type: object
+      required:
+        - id
+        - firstname
+        - lastname
+        - email
+      properties:
+        id: 
+          type: number
+          example: 1
+        firstname:
+          type: string
+          example: John
+        lastname: 
+          type: string
+          example: Lemon
+        email:
+          type: string
+          example: jonh.lemon@gmail.com
+
